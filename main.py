@@ -82,10 +82,14 @@ from flask import Flask, request
 # from flask import Flask, request
 
 # Import commands
-from command.commands import (
-    link_command,
-    button_callback,
-)
+import logging
+import os
+from command.commands import link_command, button_callback
+from function.menu import handle_msg, help_command_with_keyboard, share_command, start_command_with_keyboard
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler
+from dotenv import load_dotenv
+from flask import Flask, request
 
 # Load environment variables
 load_dotenv()
@@ -103,9 +107,6 @@ PORT = int(os.environ.get("PORT", 8080))
 # Create a Flask web server
 app = Flask(__name__)
 
-# Initialize Telegram bot application
-application = Application.builder().token(BOT_TOKEN).persistence(None).build()
-
 # Basic route for health checks
 @app.route('/')
 def index():
@@ -118,13 +119,17 @@ def health():
 # Webhook endpoint for Telegram
 @app.route('/webhook', methods=['POST'])
 def webhook():
+    # Initialize application inside the function to avoid scope issues
+    application = create_application()
     update = Update.de_json(request.get_json(force=True), application.bot)
     application.process_update(update)
     return 'OK'
 
-# Set up command handlers
-def setup_handlers():
-    # Commands
+def create_application():
+    # Create and configure the application
+    application = Application.builder().token(BOT_TOKEN).persistence(None).build()
+    
+    # Set up command handlers
     application.add_handler(CommandHandler("start", start_command_with_keyboard))
     application.add_handler(CommandHandler("help", help_command_with_keyboard))
     application.add_handler(CommandHandler("share", share_command))
@@ -136,16 +141,15 @@ def setup_handlers():
     # Message handler - handles regular text messages
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_msg))
     
-    logger.info("All handlers have been set up")
+    return application
 
 if __name__ == "__main__":
-    # Set up handlers
-    setup_handlers()
+    application = create_application()
     
     # Check if running on Render
     if 'RENDER' in os.environ:
         # Get the external URL from Render
-        WEBHOOK_URL = os.environ.get('RENDER_EXTERNAL_URL', f'https://{os.environ.get("RENDER_SERVICE_NAME")}.onrender.com') + '/webhook'
+        WEBHOOK_URL = os.environ.get('RENDER_EXTERNAL_URL') + '/webhook'
         
         # Set webhook
         application.bot.set_webhook(WEBHOOK_URL)
