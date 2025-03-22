@@ -1,0 +1,12 @@
+python-dotenv
+# pytube
+# pydantic
+# pandas
+supabase
+# crawl4ai
+telethon
+python-telegram-bot
+requests  
+# fastapi[all]
+python-multipart
+# yt-dlp
