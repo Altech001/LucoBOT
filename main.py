@@ -9,12 +9,14 @@ from function.menu import handle_msg, help_command_with_keyboard, share_command,
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler
 from dotenv import load_dotenv
+import threading
+from flask import Flask, request
+
 # importlib.reload(commands)
 from command.commands import (
     link_command,
     button_callback,
 )
-# from storage.lucostore import client
 
 load_dotenv()
 
@@ -24,7 +26,22 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
+PORT = int(os.environ.get("PORT", 8080))
 
+# Create a Flask web server
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return "Telegram Bot is running!"
+
+@app.route('/health')
+def health():
+    return "OK"
+
+def run_flask():
+    # Run Flask on the PORT specified by Render
+    app.run(host='0.0.0.0', port=PORT)
 
 def luco_run():
     application = Application.builder().token(BOT_TOKEN).persistence(None).build()
@@ -43,19 +60,13 @@ def luco_run():
     #=================== Commands End ========================================
     
     application.run_polling(allowed_updates=Update.ALL_TYPES)
-    
-
-# async def main():
-#     # Start the client
-#     await client.start(bot_token=BOT_TOKEN)
-#     logger.info("✅ LucoBOT connected successfully .......")
-    
-#     # Run until disconnected
-#     await client.run_until_disconnected()
 
 if __name__ == "__main__":
+    # Start Flask server in a separate thread
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.daemon = True  # This ensures the thread will exit when the main program exits
+    flask_thread.start()
+    
+    # Start the Telegram bot
     luco_run()
     logger.info("✅ LucoBOT connected successfully .......")
-    
-    # import asyncio
-    # asyncio.run(main())

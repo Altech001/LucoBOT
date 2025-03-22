@@ -9,4 +9,5 @@ python-telegram-bot
 requests  
 # fastapi[all]
 python-multipart
+flask
 # yt-dlp
