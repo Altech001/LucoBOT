@@ -6,7 +6,9 @@ supabase
 # crawl4ai
 telethon
 python-telegram-bot
-requests  
+requests 
+fastapi 
+uvicorn 
 # fastapi[all]
 python-multipart
 flask
